@@ -51,7 +51,7 @@ async def chat_gemini(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Generate answer using the new Google GenAI library
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.0-flash", 
+            model="gemini-1.5-flash", 
             contents=user_text
         )
         await update.message.reply_text(response.text)
@@ -76,3 +76,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

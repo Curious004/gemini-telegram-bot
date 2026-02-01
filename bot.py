@@ -24,7 +24,7 @@ def keep_alive():
 # --- 2. SETUP ---
 # We use a default value for local testing, but rely on os.environ for Render
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475065313:AAHk5TvAsG63Zyaue1h9fnTKmU-b_5yuw4E")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCcRHAdWeCIxnKZWu4lo-frjcnPpCXhkEo")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyA55r-ipIRBa6HM2t0Cs7t6jdnft9APG9k")
 
 # Initialize Client safely
 client = None
@@ -76,4 +76,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

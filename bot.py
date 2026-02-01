@@ -1,5 +1,4 @@
 import os
-import sys
 import asyncio
 from threading import Thread
 from flask import Flask
@@ -7,7 +6,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from google import genai 
 
-# --- 1. FAKE WEB SERVER ---
+# --- 1. KEEP-ALIVE SERVER (Satisfies Render) ---
 app = Flask('')
 
 @app.route('/')
@@ -22,59 +21,58 @@ def keep_alive():
     t = Thread(target=run_http)
     t.start()
 
-# --- 2. THE DETECTIVE SECTION (DEBUGGING) ---
-print("------------------------------------------------")
-print("🔍 DIAGNOSTIC MODE: Checking Environment Variables...")
+# --- 2. SETUP ---
+# We use a default value for local testing, but rely on os.environ for Render
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475065313:AAHk5TvAsG63Zyaue1h9fnTKmU-b_5yuw4E")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCcRHAdWeCIxnKZWu4lo-frjcnPpCXhkEo")
 
-# Get the keys
-TELEGRAM_TOKEN = os.environ.get("8475065313:AAHk5TvAsG63Zyaue1h9fnTKmU-b_5yuw4E")
-GEMINI_API_KEY = os.environ.get("AIzaSyCcRHAdWeCIxnKZWu4lo-frjcnPpCXhkEo")
-
-# Check Telegram Token
-if TELEGRAM_TOKEN:
-    print(f"✅ TELEGRAM_TOKEN found! (First 5 chars: {TELEGRAM_TOKEN[:5]}...)")
-else:
-    print("❌ TELEGRAM_TOKEN is MISSING or NULL")
-
-# Check Gemini Key
+# Initialize Client safely
+client = None
 if GEMINI_API_KEY:
-    print(f"✅ GEMINI_API_KEY found! (First 5 chars: {GEMINI_API_KEY[:5]}...)")
-else:
-    print("❌ GEMINI_API_KEY is MISSING or NULL")
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Error initializing Gemini: {e}")
 
-# Print ALL keys so you can see if you made a typo (like 'TELEGRAM_TOKEN ')
-print(f"📋 ALL AVAILABLE KEYS: {list(os.environ.keys())}")
-print("------------------------------------------------")
-
-# Stop here if keys are missing so we don't crash with a messy error
-if not TELEGRAM_TOKEN or not GEMINI_API_KEY:
-    print("⚠️ CRITICAL STOP: Please check the 'ALL AVAILABLE KEYS' list above for typos.")
-    sys.exit(1) 
-
-# --- 3. NORMAL BOT SETUP ---
-client = genai.Client(api_key=GEMINI_API_KEY)
-
+# --- 3. BOT LOGIC ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! I am connected and running.")
+    await update.message.reply_text("Hello! I am online and connected to Gemini AI.")
 
 async def chat_gemini(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not client:
+        await update.message.reply_text("⚠️ System Error: AI Key is missing.")
+        return
+
     user_text = update.message.text
+    # Typing indicator
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+
     try:
+        # Generate answer using the new Google GenAI library
         response = await asyncio.to_thread(
-            client.models.generate_content, model="gemini-2.0-flash", contents=user_text
+            client.models.generate_content,
+            model="gemini-2.0-flash", 
+            contents=user_text
         )
         await update.message.reply_text(response.text)
-    except Exception as e:
-        await update.message.reply_text("⚠️ Connection Error.")
 
+    except Exception as e:
+        print(f"Error: {e}")
+        await update.message.reply_text("I'm having trouble connecting to the AI right now.")
+
+# --- 4. START ---
 def main():
     keep_alive()
-    print("Bot is starting...")
-    app_bot = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app_bot.add_handler(CommandHandler("start", start))
-    app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_gemini))
-    app_bot.run_polling()
+    
+    if not TELEGRAM_TOKEN:
+        print("❌ Error: TELEGRAM_TOKEN is missing from Environment Variables.")
+        # We don't exit here, so the web server stays alive to show logs
+    else:
+        print("✅ Bot is starting...")
+        app_bot = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+        app_bot.add_handler(CommandHandler("start", start))
+        app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat_gemini))
+        app_bot.run_polling()
 
 if __name__ == '__main__':
     main()

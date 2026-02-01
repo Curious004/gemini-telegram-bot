@@ -67,3 +67,37 @@ def main():
 if __name__ == '__main__':
     main()
 
+# --- 2. SETUP CLIENTS (DEBUG MODE) ---
+import sys
+
+print("--- DEBUGGING KEYS ---")
+# 1. Check if the computer sees the keys at all
+t_token = os.environ.get("TELEGRAM_TOKEN")
+g_key = os.environ.get("GEMINI_API_KEY")
+
+if t_token:
+    print(f"✅ TELEGRAM_TOKEN found: {t_token[:5]}...") # Prints first 5 chars to prove it's there
+else:
+    print("❌ TELEGRAM_TOKEN is MISSING")
+
+if g_key:
+    print(f"✅ GEMINI_API_KEY found: {g_key[:5]}...")
+else:
+    print("❌ GEMINI_API_KEY is MISSING")
+
+# 2. Print ALL available keys to help find typos
+print("All available Environment Keys:", list(os.environ.keys()))
+
+TELEGRAM_TOKEN = t_token
+GEMINI_API_KEY = g_key
+
+# Safety check
+if not TELEGRAM_TOKEN or not GEMINI_API_KEY:
+    print("CRITICAL ERROR: Keys are missing. See the checklist above.")
+    # We exit gracefully so you can read the logs without a messy crash
+    sys.exit(1) 
+
+# NEW Client Setup
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+

@@ -23,7 +23,7 @@ def keep_alive():
 
 # --- 2. SETUP ---
 # We use a default value for local testing, but rely on os.environ for Render
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475065313:AAHk5TvAsG63Zyaue1h9fnTKmU-b_5yuw4E")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8475065313:AAF8h-Opb3h6vQYV-_y3ohluPPerB4UP5sM")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyA55r-ipIRBa6HM2t0Cs7t6jdnft9APG9k")
 
 # Initialize Client safely
@@ -51,7 +51,7 @@ async def chat_gemini(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Generate answer using the new Google GenAI library
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-1.5-flash-001", 
+            model="gemini-1.5-flash", 
             contents=user_text
         )
         await update.message.reply_text(response.text)
@@ -76,6 +76,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
